@@ -60,7 +60,7 @@ func (p ProbeOutput) firstVideoStream() (ProbeOutputStream, error) {
 
 // probe retrieves the metadata for the given video file using ffprobe.
 func probe(video string) (Metadata, error) {
-	raw, err := call("ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", video)
+	raw, _, err := call("ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", video)
 	if err != nil {
 		return Metadata{}, err
 	}

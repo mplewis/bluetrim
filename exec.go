@@ -1,13 +1,12 @@
 package main
 
-import "os/exec"
+import (
+	"os/exec"
+)
 
-// call calls a program with the given arguments and returns the output.
-func call(program string, args ...string) (string, error) {
+// call calls a program with the given arguments and returns the output and exit code.
+func call(program string, args ...string) (string, int, error) {
 	cmd := exec.Command(program, args...)
 	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return "", err
-	}
-	return string(out), nil
+	return string(out), cmd.ProcessState.ExitCode(), err
 }
