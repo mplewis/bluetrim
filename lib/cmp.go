@@ -14,9 +14,8 @@ var magickCmpMatcher = regexp.MustCompile(`^(\d+\.\d+) \((.*)\)$`)
 func CmpImages(a string, b string) (float64, error) {
 	out, code, err := call("magick", "compare", "-metric", "RMSE", a, b, "NULL:")
 	if err != nil && code != 1 {
-		return 0, err
+		return 0, fmt.Errorf("magick compare failed\noutput: %s\nerror: %w", out, err)
 	}
-	fmt.Println(out)
 	matches := magickCmpMatcher.FindStringSubmatch(out)
 	if matches == nil {
 		return 0, fmt.Errorf("could not parse magick compare output: %s", out)

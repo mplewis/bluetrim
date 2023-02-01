@@ -64,26 +64,26 @@ func (p ProbeOutput) firstVideoStream() (ProbeOutputStream, error) {
 func Probe(video string) (Metadata, error) {
 	raw, _, err := call("ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", video)
 	if err != nil {
-		return Metadata{}, err
+		return Metadata{}, fmt.Errorf("ffprobe failed\noutput: %s\nerror: %w", raw, err)
 	}
 
 	var out ProbeOutput
 	err = json.Unmarshal([]byte(raw), &out)
 	if err != nil {
-		return Metadata{}, err
+		return Metadata{}, fmt.Errorf("failed to parse ffprobe output\noutput: %s\nerror: %w", raw, err)
 	}
 
 	secs, err := strconv.ParseFloat(out.Format.Duration, 64)
 	if err != nil {
-		return Metadata{}, err
+		return Metadata{}, fmt.Errorf("failed to parse duration: %s\nerror: %w", out.Format.Duration, err)
 	}
 	vs, err := out.firstVideoStream()
 	if err != nil {
-		return Metadata{}, err
+		return Metadata{}, fmt.Errorf("failed to get first video stream\nerror: %w", err)
 	}
 	fps, err := vs.frameRate()
 	if err != nil {
-		return Metadata{}, err
+		return Metadata{}, fmt.Errorf("failed to get framerate\nerror: %w", err)
 	}
 
 	return Metadata{

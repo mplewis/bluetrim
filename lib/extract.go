@@ -5,8 +5,10 @@ import (
 	"os"
 	"path"
 
+	"github.com/schollz/progressbar/v3"
 	"github.com/sourcegraph/conc/iter"
 	"github.com/thanhpk/randstr"
+	"golang.org/x/exp/slices"
 )
 
 // Frame represents a single frame extracted from a video.
@@ -19,8 +21,7 @@ type Frame struct {
 func ExtractFrame(video Metadata, time float64, dest string) (Frame, error) {
 	out, _, err := call("ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", fmt.Sprint(time), "-i", video.Path, "-frames:v", "1", dest)
 	if err != nil {
-		fmt.Println(out)
-		return Frame{}, err
+		return Frame{}, fmt.Errorf("ffmpeg failed\noutput: %s\nerror: %w", out, err)
 	}
 	return Frame{
 		Metadata: video,
@@ -28,18 +29,35 @@ func ExtractFrame(video Metadata, time float64, dest string) (Frame, error) {
 	}, nil
 }
 
-// extractFrames extracts the frames at the given timestamps from the given video file using ffmpeg.
+// ExtractFrames extracts the frames at the given timestamps from the given video file using ffmpeg.
 func ExtractFrames(video Metadata, timestamps []float64) (string, []Frame, error) {
 	dir, err := os.MkdirTemp("", "")
 	if err != nil {
 		return "", nil, err
 	}
+	pb := progressbar.Default(int64(len(timestamps)))
 	frames, err := iter.MapErr[float64, Frame](timestamps, func(timestamp *float64) (Frame, error) {
 		dest := path.Join(dir, fmt.Sprintf("frame_%f_%s.jpg", *timestamp, randstr.String(16)))
 		if err != nil {
 			return Frame{}, err
 		}
-		return ExtractFrame(video, *timestamp, dest)
+		frame, err := ExtractFrame(video, *timestamp, dest)
+		pb.Add(1)
+		return frame, err
 	})
 	return dir, frames, err
+}
+
+// ExtractIntervalFrames extracts frames from the given video file at the interval specified in the config.
+func ExtractIntervalFrames(cfg Config, video Metadata, interval float64) (string, []Frame, error) {
+	half := video.DurationSeconds / 2
+	pos := []float64{}
+	for i := float64(0); i < half; i += cfg.Interval.Seconds() {
+		pos = append(pos, float64(i))
+	}
+	for i := video.DurationSeconds; i > half; i -= cfg.Interval.Seconds() {
+		pos = append(pos, float64(i))
+	}
+	slices.Sort(pos)
+	return ExtractFrames(video, pos)
 }
