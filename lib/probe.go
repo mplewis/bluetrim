@@ -19,19 +19,6 @@ type Metadata struct {
 	DurationSeconds float64
 }
 
-// TsToFrame converts a string timestamp to a frame number, returning an error if the frame is out of bounds.
-func (m Metadata) TsToFrame(ts string) (int64, error) {
-	parsedTs, err := parseTs(ts)
-	if err != nil {
-		return 0, err
-	}
-	frame := int64(math.Round(parsedTs.Seconds() * m.FrameRate))
-	if frame < 1 || frame > m.FrameCount {
-		err = fmt.Errorf("timestamp %s out of bounds at frame %d, expected 1 to %d", ts, frame, m.FrameCount)
-	}
-	return frame, err
-}
-
 // ProbeOutputStream represents the metadata for a single stream in a video.
 type ProbeOutputStream struct {
 	CodecType string `json:"codec_type"`     // video, audio
