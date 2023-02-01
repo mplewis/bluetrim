@@ -7,6 +7,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.8.0
 	github.com/onsi/gomega v1.26.0
 	github.com/sourcegraph/conc v0.2.0
+	github.com/thanhpk/randstr v1.0.4
 )
 
 require (
@@ -24,7 +25,6 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20221216004406-749998a2ac74 // indirect
-	github.com/thanhpk/randstr v1.0.4 // indirect
 	golang.org/x/exp v0.0.0-20230131013936-aae9b4e6329d // indirect
 	golang.org/x/net v0.5.0 // indirect
 	golang.org/x/sys v0.4.0 // indirect
