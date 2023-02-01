@@ -18,8 +18,13 @@ type Frame struct {
 }
 
 // ExtractFrame extracts the frame at the given timestamp in seconds from the given video file into the target path.
-func ExtractFrame(video Metadata, time float64, dest string) (Frame, error) {
-	out, _, err := call("ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", fmt.Sprint(time), "-i", video.Path, "-frames:v", "1", dest)
+func ExtractFrameSecs(video Metadata, time float64, dest string) (Frame, error) {
+	return ExtractFrameTimestamp(video, fmt.Sprint(time), dest)
+}
+
+// ExtractFrameTimestamp extracts the frame at the given FFmpeg timestamp from the given video file into the target path.
+func ExtractFrameTimestamp(video Metadata, time string, dest string) (Frame, error) {
+	out, _, err := call("ffmpeg", "-hide_banner", "-loglevel", "error", "-ss", time, "-i", video.Path, "-frames:v", "1", dest)
 	if err != nil {
 		return Frame{}, fmt.Errorf("ffmpeg failed\noutput: %s\nerror: %w", out, err)
 	}
@@ -41,7 +46,7 @@ func ExtractFrames(video Metadata, timestamps []float64) (string, []Frame, error
 		if err != nil {
 			return Frame{}, err
 		}
-		frame, err := ExtractFrame(video, *timestamp, dest)
+		frame, err := ExtractFrameSecs(video, *timestamp, dest)
 		pb.Add(1)
 		return frame, err
 	})
@@ -49,7 +54,8 @@ func ExtractFrames(video Metadata, timestamps []float64) (string, []Frame, error
 }
 
 // ExtractIntervalFrames extracts frames from the given video file at the interval specified in the config.
-func ExtractIntervalFrames(cfg Config, video Metadata, interval float64) (string, []Frame, error) {
+// It also returns the keyframe.
+func ExtractIntervalFrames(cfg Config, video Metadata, interval float64) (string, []Frame, Frame, error) {
 	half := video.DurationSeconds / 2
 	pos := []float64{}
 	for i := float64(0); i < half; i += cfg.Interval.Seconds() {
@@ -59,5 +65,20 @@ func ExtractIntervalFrames(cfg Config, video Metadata, interval float64) (string
 		pos = append(pos, float64(i))
 	}
 	slices.Sort(pos)
-	return ExtractFrames(video, pos)
+
+	dir, frames, err := ExtractFrames(video, pos)
+	if err != nil {
+		return "", nil, Frame{}, err
+	}
+
+	var keyframe Frame
+	if cfg.Keyframe == "start" {
+		keyframe = frames[0]
+	} else if cfg.Keyframe == "end" {
+		keyframe = frames[len(frames)-1]
+	} else {
+		keyframe, err = ExtractFrameTimestamp(video, cfg.Keyframe, path.Join(dir, "keyframe.jpg"))
+	}
+
+	return dir, frames, keyframe, err
 }
