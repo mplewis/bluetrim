@@ -1,4 +1,4 @@
-package main
+package lib
 
 import (
 	"encoding/json"
@@ -13,8 +13,23 @@ var frameRateMatcher = regexp.MustCompile(`^(\d+)/(\d+)$`)
 
 // Metadata represents the metadata for a video.
 type Metadata struct {
+	Path            string
+	FrameRate       float64
 	FrameCount      int64
 	DurationSeconds float64
+}
+
+// TsToFrame converts a string timestamp to a frame number, returning an error if the frame is out of bounds.
+func (m Metadata) TsToFrame(ts string) (int64, error) {
+	parsedTs, err := parseTs(ts)
+	if err != nil {
+		return 0, err
+	}
+	frame := int64(math.Round(parsedTs.Seconds() * m.FrameRate))
+	if frame < 1 || frame > m.FrameCount {
+		err = fmt.Errorf("timestamp %s out of bounds at frame %d, expected 1 to %d", ts, frame, m.FrameCount)
+	}
+	return frame, err
 }
 
 // ProbeOutputStream represents the metadata for a single stream in a video.
@@ -59,7 +74,7 @@ func (p ProbeOutput) firstVideoStream() (ProbeOutputStream, error) {
 }
 
 // probe retrieves the metadata for the given video file using ffprobe.
-func probe(video string) (Metadata, error) {
+func Probe(video string) (Metadata, error) {
 	raw, _, err := call("ffprobe", "-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", video)
 	if err != nil {
 		return Metadata{}, err
@@ -85,6 +100,8 @@ func probe(video string) (Metadata, error) {
 	}
 
 	return Metadata{
+		Path:            video,
+		FrameRate:       fps,
 		FrameCount:      int64(math.Round(secs * fps)),
 		DurationSeconds: secs,
 	}, nil
