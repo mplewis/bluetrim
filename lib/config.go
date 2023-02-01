@@ -12,7 +12,7 @@ const desc = "Bluetrim clips dead air from your videos."
 
 // Config defines the runtime app config.
 type Config struct {
-	Keyframe string        `figyr:"default=start,description=The keyframe to use for dead air. Possible values are the first frame of the video (\"start\")\\, the last frame (\"end\")\\, or an FFmpeg timestamp (00:00:00.000)."`
+	Keyframe string        `figyr:"default=start,description=The keyframe to reference as dead air. Possible values are the first frame of the video (\"start\")\\, the last frame (\"end\")\\, or a timestamp in seconds."`
 	In       string        `figyr:"required,description=The input file to process."`
 	Out      string        `figyr:"optional,description=The destination file for the trimmed video. If unset\\, a filename will be generated from the input file."`
 	DryRun   bool          `figyr:"optional,description=If set\\, the program will analyze the video but will not generate an output file."`
