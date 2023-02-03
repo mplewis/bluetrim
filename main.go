@@ -108,7 +108,7 @@ func main() {
 	}
 
 	for i, keeper := range keepers {
-		out := lib.SuffixFn(cfg.Out, fmt.Sprintf("_%d", i))
+		out := lib.SuffixFn(cfg.Out, fmt.Sprintf("_%d", i+1))
 		fmt.Printf("Trimming clip %d to %s…\n", i, out)
 		err := lib.Trim(video, out, keeper.Start, keeper.End)
 		check(err)
