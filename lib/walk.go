@@ -1,6 +1,9 @@
 package lib
 
-import "fmt"
+import (
+	"fmt"
+	"math"
+)
 
 type TimeRange struct {
 	Start float64
@@ -48,6 +51,8 @@ func WalkBoundaryRanges(sims []SimilarFrame) []TimeRangeState {
 // Convert boundary time ranges to "keeper" ranges, i.e. the in-between time ranges that contain non-blank video.
 // input: [6.1-6.2] -> false, [120.8-120.9] -> true, [350.4-350.5] -> false, [600.9-610.0] true
 // output: [6.2-120.8], [350.5-600.9]
+// input: [6.1-6.2] -> false
+// output: [6.2-positive infinity]
 func TimeRangesToKeepers(ranges []TimeRangeState) []TimeRange {
 	var keepers []TimeRange
 	for i, r := range ranges {
@@ -60,6 +65,13 @@ func TimeRangesToKeepers(ranges []TimeRangeState) []TimeRange {
 				End:   r.Start,
 			})
 		}
+	}
+	// open-ended range
+	if !ranges[len(ranges)-1].EndState {
+		keepers = append(keepers, TimeRange{
+			Start: ranges[len(ranges)-1].End,
+			End:   math.Inf(1),
+		})
 	}
 	return keepers
 }

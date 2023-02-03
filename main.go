@@ -84,6 +84,12 @@ func main() {
 		return
 	}
 
+	for i, r := range keepers {
+		if r.End > video.DurationSeconds {
+			keepers[i].End = video.DurationSeconds
+		}
+	}
+
 	fmt.Println("Keeping the following time ranges:")
 	for _, r := range keepers {
 		fmt.Println(r)
