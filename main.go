@@ -7,7 +7,7 @@ import (
 	"github.com/mplewis/bluetrim/lib"
 )
 
-const similarThreshold = 0.03
+const similarThreshold = 0.20
 
 func check(err error) {
 	if err != nil {
@@ -18,6 +18,11 @@ func check(err error) {
 // main runs the program.
 func main() {
 	cfg := lib.LoadConfig()
+	debug := func(x any) {
+		if cfg.Debug {
+			fmt.Println(x)
+		}
+	}
 
 	fmt.Println("Probing video…")
 	video, err := lib.Probe(cfg.In)
@@ -29,7 +34,13 @@ func main() {
 	check(err)
 	sims, err := lib.CmpAllFrames(keyframe, similarThreshold, frames)
 	check(err)
+	for _, s := range sims {
+		debug(s)
+	}
 	ranges := lib.WalkBoundaryRanges(sims)
+	for _, r := range ranges {
+		debug(r)
+	}
 
 	frameInterval := 1.0
 	fmt.Printf("Searching for boundaries at %fs intervals…\n", frameInterval)
@@ -40,7 +51,13 @@ func main() {
 		check(err)
 		sims, err := lib.CmpAllFrames(keyframe, similarThreshold, frames)
 		check(err)
+		for _, s := range sims {
+			debug(s)
+		}
 		ranges2 = append(ranges2, lib.WalkBoundaryRanges(sims)...)
+	}
+	for _, r := range ranges2 {
+		debug(r)
 	}
 
 	frameInterval = 1 / video.FrameRate
@@ -52,7 +69,13 @@ func main() {
 		check(err)
 		sims, err := lib.CmpAllFrames(keyframe, similarThreshold, frames)
 		check(err)
+		for _, s := range sims {
+			debug(s)
+		}
 		ranges3 = append(ranges3, lib.WalkBoundaryRanges(sims)...)
+	}
+	for _, r := range ranges3 {
+		debug(r)
 	}
 
 	keepers := lib.TimeRangesToKeepers(ranges3)

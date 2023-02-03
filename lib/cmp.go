@@ -12,7 +12,16 @@ import (
 // SimilarFrame is a frame with a similarity flag.
 type SimilarFrame struct {
 	Frame
-	Similar bool
+	SimilarResult
+}
+
+type SimilarResult struct {
+	Similar    bool
+	Similarity float64
+}
+
+func (s SimilarFrame) String() string {
+	return fmt.Sprintf("%f: %t (%f)", s.Time, s.Similar, s.Similarity)
 }
 
 // magickCmpMatcher extracts the diff value from the output of Imagemagick's compare command.
@@ -44,17 +53,17 @@ func CmpFrames(a Frame, b Frame) (float64, error) {
 // CmpAllFrames compares all frames against the keyframe and returns whether they were similar to the keyframe.
 func CmpAllFrames(keyframe Frame, threshold float64, frames []Frame) ([]SimilarFrame, error) {
 	pb := progressbar.Default(int64(len(frames)))
-	sims, err := iter.MapErr(frames, func(frame *Frame) (bool, error) {
+	sims, err := iter.MapErr(frames, func(frame *Frame) (SimilarResult, error) {
 		sim, err := CmpFrames(keyframe, *frame)
 		pb.Add(1)
-		return sim < threshold, err
+		return SimilarResult{Similarity: sim, Similar: sim < threshold}, err
 	})
 	if err != nil {
 		return nil, err
 	}
 	sfs := make([]SimilarFrame, len(frames))
 	for i, sim := range sims {
-		sfs[i] = SimilarFrame{Frame: frames[i], Similar: sim}
+		sfs[i] = SimilarFrame{Frame: frames[i], SimilarResult: sim}
 	}
 	return sfs, nil
 }
