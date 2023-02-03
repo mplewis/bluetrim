@@ -41,9 +41,10 @@ func main() {
 	for _, r := range ranges {
 		debug(r)
 	}
+	fmt.Printf("Found %d boundaries\n", len(ranges))
 
 	frameInterval := 1.0
-	fmt.Printf("Searching for boundaries at %fs intervals…\n", frameInterval)
+	fmt.Printf("Refining boundaries at %fs intervals…\n", frameInterval)
 	var ranges2 []lib.TimeRangeState
 	for _, r := range ranges {
 		dir, frames, err := lib.ExtractIntervalFramesRange(video, frameInterval, r.Start, r.End)
@@ -61,7 +62,7 @@ func main() {
 	}
 
 	frameInterval = 1 / video.FrameRate
-	fmt.Printf("Searching for boundaries at %fs (frame) intervals…\n", frameInterval)
+	fmt.Printf("Refining boundaries at %fs (frame) intervals…\n", frameInterval)
 	var ranges3 []lib.TimeRangeState
 	for _, r := range ranges2 {
 		dir, frames, err := lib.ExtractIntervalFramesRange(video, frameInterval, r.Start, r.End)
@@ -109,7 +110,7 @@ func main() {
 
 	for i, keeper := range keepers {
 		out := lib.SuffixFn(cfg.Out, fmt.Sprintf("_%d", i+1))
-		fmt.Printf("Trimming clip %d to %s…\n", i, out)
+		fmt.Printf("Trimming clip %d to %s…\n", i+1, out)
 		err := lib.Trim(video, out, keeper.Start, keeper.End)
 		check(err)
 	}
