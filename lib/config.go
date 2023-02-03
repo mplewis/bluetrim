@@ -1,8 +1,6 @@
 package lib
 
 import (
-	"fmt"
-	"path"
 	"time"
 
 	"github.com/mplewis/figyr"
