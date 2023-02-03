@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/schollz/progressbar/v3"
 	"github.com/sourcegraph/conc/iter"
 )
 
@@ -12,12 +13,6 @@ import (
 type SimilarFrame struct {
 	Frame
 	Similar bool
-}
-
-// TimeRange represents a range of time.
-type TimeRange struct {
-	Start float64
-	End   float64
 }
 
 // magickCmpMatcher extracts the diff value from the output of Imagemagick's compare command.
@@ -40,44 +35,26 @@ func CmpImages(a string, b string) (float64, error) {
 	return strconv.ParseFloat(matches[3], 64)
 }
 
-// SimilarFrames returns a list of frames with a similarity flag depending
-// on whether they were similar enough to the given reference keyframe.
-func SimilarFrames(threshold float64, keyframe Frame, frames []Frame) ([]SimilarFrame, error) {
-	sims, err := iter.MapErr(frames, func(frame *Frame) (float64, error) {
-		return CmpImages(keyframe.Path, frame.Path)
+// CmpFrames compares two frames using Imagemagick's RMSE algorithm and returns a value from 0 to 1.
+// A lower number indicates a higher similarity.
+func CmpFrames(a Frame, b Frame) (float64, error) {
+	return CmpImages(a.Path, b.Path)
+}
+
+// CmpAllFrames compares all frames against the keyframe and returns whether they were similar to the keyframe.
+func CmpAllFrames(keyframe Frame, threshold float64, frames []Frame) ([]SimilarFrame, error) {
+	pb := progressbar.Default(int64(len(frames)))
+	sims, err := iter.MapErr(frames, func(frame *Frame) (bool, error) {
+		sim, err := CmpFrames(keyframe, *frame)
+		pb.Add(1)
+		return sim < threshold, err
 	})
 	if err != nil {
 		return nil, err
 	}
-	var similar []SimilarFrame
+	sfs := make([]SimilarFrame, len(frames))
 	for i, sim := range sims {
-		similar = append(similar, SimilarFrame{Frame: frames[i], Similar: sim < threshold})
+		sfs[i] = SimilarFrame{Frame: frames[i], Similar: sim}
 	}
-	return similar, nil
-}
-
-// PartitionTimeRanges builds time ranges from the frames, where a contiguous range
-// indicates the frames within are similar.
-func PartitionTimeRanges(frames []SimilarFrame) []TimeRange {
-	ranges := []TimeRange{}
-	var start float64
-	var inside bool
-
-	for _, frame := range frames {
-		if frame.Similar {
-			if !inside {
-				start = frame.Time
-				inside = true
-			}
-		} else {
-			if inside {
-				ranges = append(ranges, TimeRange{Start: start, End: frame.Time})
-				inside = false
-			}
-		}
-	}
-	if inside {
-		ranges = append(ranges, TimeRange{Start: start, End: frames[len(frames)-1].Time})
-	}
-	return ranges
+	return sfs, nil
 }

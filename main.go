@@ -18,24 +18,43 @@ func check(err error) {
 // main runs the program.
 func main() {
 	cfg := lib.LoadConfig()
+
+	fmt.Println("Probing video…")
 	video, err := lib.Probe(cfg.In)
 	check(err)
 
-	dir, frames, keyframe, err := lib.ExtractIntervalFrames(cfg, video, cfg.Interval.Seconds())
-	if dir != "" {
+	fmt.Println("Extracting keyframe and summary frames…")
+	dir, frames, keyframe, err := lib.ExtractFramesFull(cfg, video)
+	defer os.RemoveAll(dir)
+	check(err)
+	sims, err := lib.CmpAllFrames(keyframe, similarThreshold, frames)
+	check(err)
+	ranges := lib.WalkBoundaryRanges(sims)
+
+	frameInterval := 1.0
+	fmt.Printf("Searching for boundaries at %fs intervals…\n", frameInterval)
+	var ranges2 []lib.TimeRangeState
+	for _, r := range ranges {
+		dir, frames, err := lib.ExtractIntervalFramesRange(video, frameInterval, r.Start, r.End)
 		defer os.RemoveAll(dir)
-	}
-	check(err)
-
-	similar, err := lib.SimilarFrames(similarThreshold, keyframe, frames)
-	check(err)
-	for _, frame := range similar {
-		fmt.Printf("%s @ %f: %t\n", frame.Path, frame.Time, frame.Similar)
-	}
-	trs := lib.PartitionTimeRanges(similar)
-	for _, tr := range trs {
-		fmt.Printf("%f - %f\n", tr.Start, tr.End)
+		check(err)
+		sims, err := lib.CmpAllFrames(keyframe, similarThreshold, frames)
+		check(err)
+		ranges2 = append(ranges2, lib.WalkBoundaryRanges(sims)...)
 	}
 
-	// TODO: binary search to find boundaries
+	frameInterval = 1 / video.FrameRate
+	fmt.Printf("Searching for boundaries at %fs (frame) intervals…\n", frameInterval)
+	var ranges3 []lib.TimeRangeState
+	for _, r := range ranges2 {
+		dir, frames, err := lib.ExtractIntervalFramesRange(video, frameInterval, r.Start, r.End)
+		defer os.RemoveAll(dir)
+		check(err)
+		sims, err := lib.CmpAllFrames(keyframe, similarThreshold, frames)
+		check(err)
+		ranges3 = append(ranges3, lib.WalkBoundaryRanges(sims)...)
+	}
+
+	keepers := lib.TimeRangesToKeepers(ranges3)
+	fmt.Println(keepers)
 }

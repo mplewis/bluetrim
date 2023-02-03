@@ -31,12 +31,3 @@ func LoadConfig() Config {
 	}
 	return cfg
 }
-
-// genOutFn generates an output filename from an input filename.
-// Example: /path/to/my/input.mp4 => path/to/my/input_trimmed.mp4
-func genOutFn(in string) string {
-	dir, file := path.Split(in)
-	ext := path.Ext(file)
-	name := file[:len(file)-len(ext)]
-	return path.Join(dir, fmt.Sprintf("%s_trimmed%s", name, ext))
-}

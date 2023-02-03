@@ -51,9 +51,9 @@ func ExtractFrames(video Metadata, timestamps []float64) (string, []Frame, error
 	return dir, frames, err
 }
 
-// ExtractIntervalFrames extracts frames from the given video file at the interval specified in the config.
-// It also returns the keyframe.
-func ExtractIntervalFrames(cfg Config, video Metadata, interval float64) (string, []Frame, Frame, error) {
+// ExtractFramesFull extracts frames from the given video file at the interval specified in the config,
+// as well as the keyframe.
+func ExtractFramesFull(cfg Config, video Metadata) (string, []Frame, Frame, error) {
 	var err error
 	keyframeTs := float64(-1)
 	if cfg.Keyframe != "start" && cfg.Keyframe != "end" {
@@ -88,4 +88,13 @@ func ExtractIntervalFrames(cfg Config, video Metadata, interval float64) (string
 	}
 
 	return dir, frames, keyframe, err
+}
+
+// ExtractIntervalFramesRange extracts a range of frames from the given video file at the specified interval.
+func ExtractIntervalFramesRange(video Metadata, interval float64, start float64, end float64) (string, []Frame, error) {
+	pos := []float64{}
+	for i := start; i <= end; i += interval {
+		pos = append(pos, float64(i))
+	}
+	return ExtractFrames(video, pos)
 }
