@@ -30,9 +30,12 @@ func main() {
 	similar, err := lib.SimilarFrames(similarThreshold, keyframe, frames)
 	check(err)
 	for _, frame := range similar {
-		fmt.Printf("%s @ %f: %f\n", frame.Path, frame.Time, frame.Similarity)
+		fmt.Printf("%s @ %f: %t\n", frame.Path, frame.Time, frame.Similar)
+	}
+	trs := lib.PartitionTimeRanges(similar)
+	for _, tr := range trs {
+		fmt.Printf("%f - %f\n", tr.Start, tr.End)
 	}
 
-	// TODO: find blocks of contiguous dead air
 	// TODO: binary search to find boundaries
 }
