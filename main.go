@@ -24,7 +24,7 @@ func main() {
 		}
 	}
 
-	fmt.Println("Probing video…")
+	fmt.Printf("Probing %s…\n", cfg.In)
 	video, err := lib.Probe(cfg.In)
 	check(err)
 
